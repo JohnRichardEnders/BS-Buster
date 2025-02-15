@@ -11,8 +11,8 @@ from pydantic import BaseModel
 import tempfile
 from openai import OpenAI, OpenAIError
 from fastapi.middleware.cors import CORSMiddleware
-import pyaudio
-import openai
+
+import support_service
 
 app = FastAPI()
 client = OpenAI()
@@ -48,7 +48,10 @@ def audio_callback(indata, frames, time, status):
 def record_audio():
     global is_recording
     with sd.InputStream(
-        samplerate=SAMPLE_RATE, channels=CHANNELS, dtype=DTYPE, callback=audio_callback
+        samplerate=SAMPLE_RATE,
+        channels=CHANNELS,
+        dtype=DTYPE,
+        callback=audio_callback,
     ):
         while is_recording:
             time.sleep(0.1)
@@ -109,7 +112,9 @@ async def get_transcript():
         return {"transcription": ""}
 
     # Save to a temporary file
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
+    with tempfile.NamedTemporaryFile(
+        suffix=".wav", delete=False
+    ) as temp_audio:
         wavfile.write(temp_audio.name, SAMPLE_RATE, audio_array)
         temp_audio_path = temp_audio.name
 
@@ -133,10 +138,14 @@ async def get_transcript():
         return {"transcription": claims}
     except OpenAIError as e:
         print(f"OpenAI API error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"OpenAI API error: {str(e)}"
+        )
     except Exception as e:
         print(f"Transcription error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Transcription error: {str(e)}"
+        )
     finally:
         import os
 
@@ -164,7 +173,7 @@ def extract_claim(sentence):
 
     print(f"Execuring completion with message: {sentence}")
     if sentence != " " and len(sentence) > 3:
-        completion = client.chat.completions.create(
+        completion = openai.client.chat.completions.create(
             model="gpt-4o",
             messages=messages,
         )
