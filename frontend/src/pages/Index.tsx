@@ -15,20 +15,7 @@ const initialClaims = [
     speaker: "Speaker A",
     status: 'verified' as const,
   },
-  {
-    id: '2',
-    text: "The Great Wall of China is visible from space.",
-    timestamp: "10:15:45",
-    speaker: "Speaker B",
-    status: 'disputed' as const,
-  },
-  {
-    id: '3',
-    text: "JavaScript was created in 10 days.",
-    timestamp: "10:16:02",
-    speaker: "Speaker A",
-    status: 'pending' as const,
-  },
+ 
 ];
 
 const initialMetrics = {
@@ -42,20 +29,22 @@ const initialMetrics = {
 const Index = () => {
   const { isRecording, startRecording, stopRecording } = useRecording();
   const liveTranscript = useTranscriptPolling(isRecording);
-  const [claims, setClaims] = useState(initialClaims);
+  const [claims, setClaims] = useState([]);
   const [metrics] = useState(initialMetrics);
 
 
   useEffect(() => {
     if (liveTranscript) {
-      const newClaim = {
-        id: Date.now().toString(),
-        text: liveTranscript,
-        timestamp: new Date().toLocaleTimeString(),
-        speaker: "Live Speaker",
-        status: 'pending' as const,
-      };
-      setClaims(prevClaims => [newClaim, ...prevClaims]);
+      if(liveTranscript.length != 0){
+        const newClaim = {
+          id: Date.now().toString(),
+          text: liveTranscript,
+          timestamp: new Date().toLocaleTimeString(),
+          speaker: "Live Speaker",
+          status: 'pending' as const,
+        };
+        setClaims(prevClaims => [newClaim, ...prevClaims]);
+      }
     }
   }, [liveTranscript]);
 

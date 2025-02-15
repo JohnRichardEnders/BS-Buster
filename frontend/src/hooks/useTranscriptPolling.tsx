@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/components/ui/use-toast";
 
-export const useTranscriptPolling = (isRecording: boolean) => {
+export const useTranscriptPolling = (isRecording: boolean, intervalMs: number = 10000) => {
   const [transcript, setTranscript] = useState<string>('');
 
   const fetchTranscript = useCallback(async () => {
@@ -11,8 +11,6 @@ export const useTranscriptPolling = (isRecording: boolean) => {
         headers: {
           'Content-Type': 'application/json',
         },
-        // You can add a body here if needed
-        // body: JSON.stringify({ /* any data you need to send */ }),
       });
       
       if (!response.ok) {
@@ -20,8 +18,6 @@ export const useTranscriptPolling = (isRecording: boolean) => {
       }
       
       const data = await response.json();
-      console.log("test")
-      console.log(data);
       setTranscript(data.transcription);
     } catch (error) {
       console.error('Error fetching transcript:', error);
@@ -34,19 +30,23 @@ export const useTranscriptPolling = (isRecording: boolean) => {
   }, []);
 
   useEffect(() => {
-    let intervalId: NodeJS.Timeout;
+
+    console.log("hi there")
+    let timeoutId: ReturnType<typeof setTimeout>;
+
+    const tick = async () => {
+      await fetchTranscript();
+      timeoutId = setTimeout(tick, intervalMs);
+    };
 
     if (isRecording) {
-      fetchTranscript(); // Fetch immediately when recording starts
-      intervalId = setInterval(fetchTranscript, 5000); // Then every 5 seconds
+      tick(); // Start the polling loop
     }
 
     return () => {
-      if (intervalId) {
-        clearInterval(intervalId);
-      }
+      clearTimeout(timeoutId);
     };
-  }, [isRecording, fetchTranscript]);
+  }, [isRecording, fetchTranscript, intervalMs]);
 
   return transcript;
 };

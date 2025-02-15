@@ -1,3 +1,4 @@
+import re
 import sys
 import sounddevice as sd
 import numpy as np
@@ -11,6 +12,7 @@ import tempfile
 from openai import OpenAI, OpenAIError
 from fastapi.middleware.cors import CORSMiddleware
 import pyaudio
+import openai
 
 app = FastAPI()
 client = OpenAI()
@@ -75,9 +77,12 @@ async def stop_recording():
     return {"message": "Not currently recording"}
 
 
+sentences_set = {}
+
+
 @app.post("/transcript")
 async def get_transcript():
-    global is_recording, audio_queue, last_process_time
+    global is_recording, audio_queue, last_process_time, previous_half_sentence
     if not is_recording:
         raise HTTPException(status_code=400, detail="Not currently recording")
 
@@ -110,11 +115,22 @@ async def get_transcript():
 
     # Transcribe using OpenAI Whisper
     try:
+
+        claims = []
         with open(temp_audio_path, "rb") as audio_file:
             transcription = client.audio.transcriptions.create(
-                model="whisper-1", file=audio_file
+                model="whisper-1", file=audio_file, language="en"
             )
-        return {"transcription": transcription.text}
+            sentences = re.split(r"(?<=[.!?])\s+", transcription.text)
+
+            for s in sentences:
+                claim = extract_claim(s)
+
+                if claim != "":
+                    print("claim: ", claim)
+                    claims.append(claim)
+        print("final claims: ", claims)
+        return {"transcription": claims}
     except OpenAIError as e:
         print(f"OpenAI API error: {str(e)}")
         raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
@@ -125,6 +141,40 @@ async def get_transcript():
         import os
 
         os.unlink(temp_audio_path)
+
+
+def extract_claim(sentence):
+    messages = [
+        {
+            "role": "user",
+            "content": (
+                "Extract the main factual claim from the following sentence. A factual claim is a statement that asserts a fact about the world. "
+                "Remove any extra conversational words, qualifiers, or opinions so that only the core assertion remains. "
+                "If the sentence does not contain a clear factual claim or no sentence is given, return an empty string.\n\n"
+                "Example 1:\n"
+                'Input: "Yes and the other day I heard that Germany actually won the last world cup"\n'
+                'Output: "Germany won the last world cup"\n\n'
+                "Example 2:\n"
+                'Input: "The great wall of china is visible from space"\n'
+                'Output: "The great wall of china is visible from space"\n\n'
+                f'Sentence: "{sentence}"'
+            ),
+        }
+    ]
+
+    print(f"Execuring completion with message: {sentence}")
+    if sentence != " " and len(sentence) > 3:
+        completion = client.chat.completions.create(
+            model="gpt-4o",
+            messages=messages,
+        )
+    else:
+        return ""
+
+    # print(completion.choices[0].message.content.strip('"'))
+
+    claim = completion.choices[0].message.content.strip('"')
+    return claim
 
 
 class Claim(BaseModel):
