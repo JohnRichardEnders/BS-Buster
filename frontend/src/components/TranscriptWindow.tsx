@@ -1,26 +1,97 @@
-
 import { Card } from "@/components/ui/card";
-import { AlertTriangle, CheckCircle, XCircle } from "lucide-react";
+import { AlertTriangle, CheckCircle, XCircle, CircleHelp} from "lucide-react";
+import { useEffect, useRef } from "react";
+
+interface FactCheckResponse {
+  claim: string;
+  result: 'True' | 'False' | 'Unverifiable';
+  correction?: string;
+  source?: string;
+}
 
 interface Claim {
   id: string;
   text: string;
   timestamp: string;
   speaker: string;
-  status: 'verified' | 'disputed' | 'pending';
+  status: 'verified' | 'disputed' | 'unverifiable' | 'pending';
+  correction?: string;
+  source?: string;
 }
 
 interface TranscriptWindowProps {
   claims: Claim[];
+  onClaimUpdate: (claim: Claim) => void;
 }
 
-export const TranscriptWindow = ({ claims }: TranscriptWindowProps) => {
+export const TranscriptWindow = ({ claims, onClaimUpdate }: TranscriptWindowProps) => {
+  // Keep track of claims we've already checked
+  const checkedClaimsRef = useRef<Set<string>>(new Set());
+
+  const checkClaim = async (claim: Claim) => {
+    // If we've already checked this claim, skip it
+    if (checkedClaimsRef.current.has(claim.id)) {
+      return;
+    }
+
+    // Mark this claim as checked
+    checkedClaimsRef.current.add(claim.id);
+
+    try {
+      const response = await fetch('http://localhost:8000/fact-check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ text: claim.text }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to fact check claim');
+      }
+
+      const result: FactCheckResponse = await response.json();
+      
+      // Create updated claim with proper typing
+      const updatedClaim: Claim = {
+        ...claim,
+        status: result.result === 'True' ? 'verified' : 
+               result.result === 'False' ? 'disputed' : 
+               result.result === 'Unverifiable' ? 'unverifiable' :
+               'pending',
+        correction: result.correction,
+        source: result.source,
+      };
+
+      // Call the onClaimUpdate callback with the updated claim
+      onClaimUpdate(updatedClaim);
+    } catch (error) {
+      console.error('Error fact checking claim:', error);
+      // Remove from checked claims if there was an error, so we can retry
+      checkedClaimsRef.current.delete(claim.id);
+    }
+  };
+
+  useEffect(() => {
+    // Only check claims that are pending and haven't been checked yet
+    const newPendingClaims = claims.filter(
+      claim => claim.status === 'pending' && !checkedClaimsRef.current.has(claim.id)
+    );
+
+    // Check each new pending claim
+    newPendingClaims.forEach(claim => {
+      checkClaim(claim);
+    });
+  }, [claims]); // Still depends on claims, but we now filter out already-checked claims
+
   const getStatusStyles = (status: Claim['status']) => {
     switch (status) {
       case 'verified':
         return 'bg-green-500/10 border-green-500/20';
       case 'disputed':
         return 'bg-red-500/10 border-red-500/20';
+      case 'unverifiable':
+        return 'bg-purple-500/10 border-purple-500/20';
       case 'pending':
         return 'bg-gray-500/10 border-gray-500/20';
       default:
@@ -39,6 +110,8 @@ export const TranscriptWindow = ({ claims }: TranscriptWindowProps) => {
             <span className="text-red-500 text-sm font-bold">BULLSHIT!</span>
           </div>
         );
+      case 'unverifiable':
+        return <CircleHelp className="h-5 w-5 text-purple-500" />;
       case 'pending':
         return <AlertTriangle className="h-5 w-5 text-gray-500" />;
       default:
@@ -61,6 +134,21 @@ export const TranscriptWindow = ({ claims }: TranscriptWindowProps) => {
             {getStatusIcon(claim.status)}
           </div>
           <p className="text-gray-200">{claim.text}</p>
+          {claim.correction && (
+            <p className="mt-2 text-sm text-yellow-400">
+              Correction: {claim.correction}
+            </p>
+          )}
+          {claim.source && (
+            <a 
+              href={claim.source} 
+              target="_blank" 
+              rel="noopener noreferrer" 
+              className="mt-1 text-xs text-blue-400 hover:underline block"
+            >
+              Source
+            </a>
+          )}
         </div>
       ))}
     </div>

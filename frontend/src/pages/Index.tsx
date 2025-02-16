@@ -7,21 +7,14 @@ import { useTranscriptPolling } from '@/hooks/useTranscriptPolling';
 import { LiveTranscript } from '@/components/LiveTranscript';
 import { Card } from '@/components/ui/card';
 
-// (Optional) Initial claims for demo purposes
-const initialClaims = [
-  {
-    id: '1',
-    text: "The first electric car was built in 1884.",
-    timestamp: "10:15:23",
-    speaker: "Speaker A",
-    status: 'verified' as const,
-  },
-];
+// Remove initial claims
+const initialClaims = [];
 
 const initialMetrics = {
-  verified: 1,
-  disputed: 1,
-  pending: 1,
+  verified: 0,
+  disputed: 0,
+  unverifiable: 0,
+  pending: 0,
 };
 
 const Index = () => {
@@ -29,7 +22,31 @@ const Index = () => {
   // The polling hook now returns an array of claim strings.
   const polledClaims = useTranscriptPolling(isRecording);
   const [claims, setClaims] = useState([]);
-  const [metrics] = useState(initialMetrics);
+  const [metrics, setMetrics] = useState(initialMetrics);
+
+  const updateClaim = (updatedClaim) => {
+    setClaims(prevClaims => 
+      prevClaims.map(claim => 
+        claim.id === updatedClaim.id ? updatedClaim : claim
+      )
+    );
+
+    // Update metrics
+    setMetrics(prevMetrics => {
+      const newMetrics = { ...prevMetrics };
+      
+      // Decrement the previous status count
+      const oldClaim = claims.find(c => c.id === updatedClaim.id);
+      if (oldClaim) {
+        newMetrics[oldClaim.status] = Math.max(0, newMetrics[oldClaim.status] - 1);
+      }
+      
+      // Increment the new status count
+      newMetrics[updatedClaim.status] = (newMetrics[updatedClaim.status] || 0) + 1;
+      
+      return newMetrics;
+    });
+  };
 
   useEffect(() => {
     if (polledClaims.length > 0) {
@@ -43,6 +60,12 @@ const Index = () => {
       }));
       // Prepend new claims to the existing list.
       setClaims(prevClaims => [...newClaims, ...prevClaims]);
+      
+      // Update metrics for new pending claims
+      setMetrics(prevMetrics => ({
+        ...prevMetrics,
+        pending: prevMetrics.pending + newClaims.length
+      }));
     }
   }, [polledClaims]);
 
@@ -97,7 +120,7 @@ const Index = () => {
               <div className="p-4 border-b border-white/10">
                 <h2 className="text-xl font-semibold text-white">Claims Analysis</h2>
               </div>
-              <ClaimWindow claims={claims} />
+              <ClaimWindow claims={claims} onClaimUpdate={updateClaim} />
             </Card>
           </div>
         </div>

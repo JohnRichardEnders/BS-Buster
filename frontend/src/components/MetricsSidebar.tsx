@@ -1,10 +1,10 @@
-
 import { Card } from "@/components/ui/card";
-import { Check, XCircle, Search } from "lucide-react";
+import { Check, XCircle, Search, HelpCircle } from "lucide-react";
 
 interface Metrics {
   verified: number;
   disputed: number;
+  unverifiable: number;
   pending: number;
 }
 
@@ -13,7 +13,7 @@ interface MetricsSidebarProps {
 }
 
 export const MetricsSidebar = ({ metrics }: MetricsSidebarProps) => {
-  const total = metrics.verified + metrics.disputed + metrics.pending;
+  const total = metrics.verified + metrics.disputed + metrics.unverifiable + metrics.pending;
   
   return (
     <Card className="p-6 glass-card animate-slide-in">
@@ -34,6 +34,14 @@ export const MetricsSidebar = ({ metrics }: MetricsSidebarProps) => {
             <span className="text-gray-200">BS Claims</span>
           </div>
           <span className="font-medium text-red-400">{metrics.disputed}</span>
+        </div>
+        
+        <div className="flex items-center justify-between p-3 bg-purple-500/10 rounded-lg border border-purple-500/20">
+          <div className="flex items-center gap-2">
+            <HelpCircle className="h-5 w-5 text-purple-500" />
+            <span className="text-gray-200">Unverifiable</span>
+          </div>
+          <span className="font-medium text-purple-400">{metrics.unverifiable}</span>
         </div>
         
         <div className="flex items-center justify-between p-3 bg-gray-500/10 rounded-lg border border-gray-500/20">
