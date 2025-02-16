@@ -2,6 +2,12 @@
 
 BS Buster is a real-time fact-checking application that transcribes speech and verifies claims on the fly.
 
+<img width="1710" alt="image" src="https://github.com/user-attachments/assets/a2d360fd-16b5-44f1-9f60-7d673c78e369" />
+
+<img width="1422" alt="image" src="https://github.com/user-attachments/assets/b65d7668-4025-451f-9e18-57d445f011db" />
+
+
+
 ## Prerequisites
 
 Before you begin, ensure you have the following installed:
