@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { AlertTriangle, CheckCircle, XCircle, CircleHelp} from "lucide-react";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
 
 interface FactCheckResponse {
   claim: string;
@@ -28,7 +28,7 @@ export const TranscriptWindow = ({ claims, onClaimUpdate }: TranscriptWindowProp
   // Keep track of claims we've already checked
   const checkedClaimsRef = useRef<Set<string>>(new Set());
 
-  const checkClaim = async (claim: Claim) => {
+  const checkClaim = useCallback(async (claim: Claim) => {
     // If we've already checked this claim, skip it
     if (checkedClaimsRef.current.has(claim.id)) {
       return;
@@ -70,19 +70,17 @@ export const TranscriptWindow = ({ claims, onClaimUpdate }: TranscriptWindowProp
       // Remove from checked claims if there was an error, so we can retry
       checkedClaimsRef.current.delete(claim.id);
     }
-  };
+  }, [onClaimUpdate]);
 
   useEffect(() => {
-    // Only check claims that are pending and haven't been checked yet
     const newPendingClaims = claims.filter(
       claim => claim.status === 'pending' && !checkedClaimsRef.current.has(claim.id)
     );
 
-    // Check each new pending claim
     newPendingClaims.forEach(claim => {
       checkClaim(claim);
     });
-  }, [claims]); // Still depends on claims, but we now filter out already-checked claims
+  }, [claims, checkClaim]); // Add checkClaim to dependencies
 
   const getStatusStyles = (status: Claim['status']) => {
     switch (status) {
