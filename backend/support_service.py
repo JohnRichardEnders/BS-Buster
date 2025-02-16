@@ -22,7 +22,7 @@ async def verify_claim(claim: str) -> Dict[str, Any]:
     """Asynchronously perform a fact-check request using Moonshot API"""
     api_key = load_api_key()
     async_client = AsyncOpenAI(
-        api_key=api_key, base_url="https://api.moonshot.cn/v1"
+        api_key=api_key, base_url="https://api.perplexity.ai"
     )
 
     messages = [
@@ -50,18 +50,18 @@ async def verify_claim(claim: str) -> Dict[str, Any]:
     try:
         while True:
             completion = await async_client.chat.completions.create(
-                model="moonshot-v1-auto",
+                model="sonar-pro",
                 messages=messages,
                 temperature=0.1,
-                tools=[
-                    {
-                        "type": "builtin_function",
-                        "function": {
-                            "name": "$web_search",
-                        },
-                    }
-                ],
-                response_format={"type": "json_object"},
+                # tools=[
+                #     {
+                #         "type": "builtin_function",
+                #         "function": {
+                #             "name": "$web_search",
+                #         },
+                #     }
+                # ],
+                # response_format={"type": "json_schema"},
             )
 
             choice = completion.choices[0]
@@ -96,7 +96,8 @@ async def verify_claim(claim: str) -> Dict[str, Any]:
                     }
 
     except Exception as e:
-        return {"error": f"Error occurred: {str(e)}"}
+        print("Error:", e)
+        return {"error": e}
 
 
 # async def main() -> None:
