@@ -22,8 +22,7 @@ export const LiveTranscript = () => {
   }, []);
 
   return (
-    <div className="live-transcript p-4 bg-white/80 rounded-lg shadow-sm">
-      <h2 className="text-xl font-bold mb-2">Live Transcript</h2>
+    <div>
       <ul>
         {sentences.map((s, i) => (
           <li key={i}>{s}</li>

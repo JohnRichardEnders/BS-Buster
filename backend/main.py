@@ -114,9 +114,7 @@ async def get_transcript():
         return {"transcription": ""}
 
     # Save to a temporary file
-    with tempfile.NamedTemporaryFile(
-        suffix=".wav", delete=False
-    ) as temp_audio:
+    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
         wavfile.write(temp_audio.name, SAMPLE_RATE, audio_array)
         temp_audio_path = temp_audio.name
 
@@ -141,14 +139,10 @@ async def get_transcript():
         return {"transcription": claims}
     except OpenAIError as e:
         print(f"OpenAI API error: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"OpenAI API error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
     except Exception as e:
         print(f"Transcription error: {str(e)}")
-        raise HTTPException(
-            status_code=500, detail=f"Transcription error: {str(e)}"
-        )
+        raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
     finally:
         import os
 
