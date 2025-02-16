@@ -120,7 +120,9 @@ const Index = () => {
               <div className="p-4 border-b border-white/10">
                 <h2 className="text-xl font-semibold text-white">Claims Analysis</h2>
               </div>
-              <ClaimWindow claims={claims} onClaimUpdate={updateClaim} />
+              <div className="h-[300px] overflow-y-auto">
+                <ClaimWindow claims={claims} onClaimUpdate={updateClaim} />
+              </div>
             </Card>
           </div>
         </div>
