@@ -1,12 +1,12 @@
-
 import { useEffect, useState } from 'react';
 import { useRecording } from '@/hooks/useRecording';
 import { ControlPanel } from '@/components/ControlPanel';
-import { TranscriptWindow } from '@/components/TranscriptWindow';
+import { TranscriptWindow as ClaimWindow } from '@/components/TranscriptWindow';
 import { MetricsSidebar } from '@/components/MetricsSidebar';
 import { useTranscriptPolling } from '@/hooks/useTranscriptPolling';
+import { LiveTranscript } from '@/components/LiveTranscript';
 
-// Mock data for initial UI
+// (Optional) Initial claims for demo purposes
 const initialClaims = [
   {
     id: '1',
@@ -15,7 +15,6 @@ const initialClaims = [
     speaker: "Speaker A",
     status: 'verified' as const,
   },
- 
 ];
 
 const initialMetrics = {
@@ -24,29 +23,26 @@ const initialMetrics = {
   pending: 1,
 };
 
-
-
 const Index = () => {
   const { isRecording, startRecording, stopRecording } = useRecording();
-  const liveTranscript = useTranscriptPolling(isRecording);
+  // The polling hook now returns an array of claim strings.
+  const polledClaims = useTranscriptPolling(isRecording);
   const [claims, setClaims] = useState([]);
-  const [metrics] = useState(initialMetrics);
-
 
   useEffect(() => {
-    if (liveTranscript) {
-      if(liveTranscript.length != 0){
-        const newClaim = {
-          id: Date.now().toString(),
-          text: liveTranscript,
-          timestamp: new Date().toLocaleTimeString(),
-          speaker: "Live Speaker",
-          status: 'pending' as const,
-        };
-        setClaims(prevClaims => [newClaim, ...prevClaims]);
-      }
+    if (polledClaims.length > 0) {
+      // Create a new claim for each returned claim string.
+      const newClaims = polledClaims.map((claimText: string) => ({
+        id: Date.now().toString() + Math.random().toString(),
+        text: claimText,
+        timestamp: new Date().toLocaleTimeString(),
+        speaker: "Live Speaker",
+        status: 'pending' as const,
+      }));
+      // Prepend new claims to the existing list.
+      setClaims(prevClaims => [...newClaims, ...prevClaims]);
     }
-  }, [liveTranscript]);
+  }, [polledClaims]);
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-gray-50 to-gray-100">
@@ -60,10 +56,12 @@ const Index = () => {
         </div>
         
         <div className="flex gap-6">
+          <LiveTranscript />
           <div className="flex-1">
-            <TranscriptWindow claims={claims} liveTranscript={liveTranscript} />
+            {/* Pass the list of claim objects to the display component */}
+            <ClaimWindow claims={claims} />
           </div>
-          <MetricsSidebar metrics={metrics} />
+          <MetricsSidebar metrics={initialMetrics} />
         </div>
       </div>
     </div>

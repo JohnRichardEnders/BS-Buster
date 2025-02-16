@@ -2,7 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from "@/components/ui/use-toast";
 
 export const useTranscriptPolling = (isRecording: boolean, intervalMs: number = 10000) => {
-  const [transcript, setTranscript] = useState<string>('');
+  const [transcript, setTranscript] = useState<string[]>([]);
 
   const fetchTranscript = useCallback(async () => {
     try {
@@ -18,7 +18,7 @@ export const useTranscriptPolling = (isRecording: boolean, intervalMs: number = 
       }
       
       const data = await response.json();
-      setTranscript(data.transcription);
+      setTranscript(data.transcription || []);
     } catch (error) {
       console.error('Error fetching transcript:', error);
       toast({

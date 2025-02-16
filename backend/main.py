@@ -17,6 +17,8 @@ import support_service
 app = FastAPI()
 client = OpenAI()
 
+live_transcript = []
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],  # Allows all origins
@@ -112,7 +114,9 @@ async def get_transcript():
         return {"transcription": ""}
 
     # Save to a temporary file
-    with tempfile.NamedTemporaryFile(suffix=".wav", delete=False) as temp_audio:
+    with tempfile.NamedTemporaryFile(
+        suffix=".wav", delete=False
+    ) as temp_audio:
         wavfile.write(temp_audio.name, SAMPLE_RATE, audio_array)
         temp_audio_path = temp_audio.name
 
@@ -125,6 +129,7 @@ async def get_transcript():
                 model="whisper-1", file=audio_file, language="en"
             )
             sentences = re.split(r"(?<=[.!?])\s+", transcription.text)
+            live_transcript.extend(sentences)
 
             for s in sentences:
                 claim = extract_claim(s)
@@ -136,10 +141,14 @@ async def get_transcript():
         return {"transcription": claims}
     except OpenAIError as e:
         print(f"OpenAI API error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"OpenAI API error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"OpenAI API error: {str(e)}"
+        )
     except Exception as e:
         print(f"Transcription error: {str(e)}")
-        raise HTTPException(status_code=500, detail=f"Transcription error: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Transcription error: {str(e)}"
+        )
     finally:
         import os
 
@@ -188,6 +197,23 @@ class Claim(BaseModel):
 async def fact_check(claim: Claim):
     result = await support_service.verify_claim(claim.text)
     return result
+
+
+from fastapi import WebSocket
+import asyncio
+
+
+@app.websocket("/ws/transcript")
+async def websocket_transcript(websocket: WebSocket):
+    await websocket.accept()
+    last_index = 0
+    while True:
+        await asyncio.sleep(0.5)  # Poll every 0.5 seconds
+        if len(live_transcript) > last_index:
+            # Send only the new sentences
+            new_sentences = live_transcript[last_index:]
+            await websocket.send_json({"transcript": new_sentences})
+            last_index = len(live_transcript)
 
 
 if __name__ == "__main__":
