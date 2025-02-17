@@ -10,8 +10,6 @@ BS Buster is a real-time fact-checking application that transcribes speech and v
 
 ## Prerequisites
 
-Before you begin, ensure you have the following installed:
-
 - Python 3.8+
 - Node.js 16+
 - npm or yarn
@@ -19,10 +17,8 @@ Before you begin, ensure you have the following installed:
 
 ## Project Structure
 
-The project consists of two main parts:
-
-- Frontend: React application with TypeScript
-- Backend: FastAPI server with real-time audio processing
+- Frontend: Typescript React application 
+- Backend: FastAPI 
 
 ## Backend Setup
 
