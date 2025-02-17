@@ -6,7 +6,9 @@ BS Buster is a real-time fact-checking application that transcribes speech and v
 
 <img width="1422" alt="image" src="https://github.com/user-attachments/assets/b65d7668-4025-451f-9e18-57d445f011db" />
 
+## About BS Buster
 
+This is a project that we built during a hackathon hosted by [Dominique Paul](https://x.com/DominiqueCAPaul). We were inspired by the on screen fact checks in videos of recent political debates and wanted to build a live version. 
 
 ## Prerequisites
 
@@ -38,6 +40,7 @@ pip install -r requirements.txt
 
 bash
 OPENAI_API_KEY=your_openai_api_key
+PERPLEXITY_API_KEY=your_perplexity_api_key
 
 4. Start the backend server:
 
@@ -125,14 +128,6 @@ The frontend will run on `http://localhost:3000`
 4. **OpenAI API Issues**
    - Verify your API key is correctly set in the `.env` file
    - Check your API usage limits and billing status
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
 
 ## Security Notes
 
