@@ -97,6 +97,7 @@ export const TranscriptWindow = ({ claims, onClaimUpdate }: TranscriptWindowProp
     }
   };
 
+
   const getStatusIcon = (status: Claim['status']) => {
     switch (status) {
       case 'verified':
@@ -132,9 +133,14 @@ export const TranscriptWindow = ({ claims, onClaimUpdate }: TranscriptWindowProp
             {getStatusIcon(claim.status)}
           </div>
           <p className="text-gray-200">{claim.text}</p>
-          {claim.correction && (
+          {claim.correction && (claim.status == "disputed") && (
             <p className="mt-2 text-sm text-yellow-400">
               Correction: {claim.correction}
+            </p>
+          )}
+          {claim.correction && (claim.status == "verified") && (
+            <p className="mt-2 text-sm text-gray-500">
+              {claim.correction}
             </p>
           )}
           {claim.source && (
