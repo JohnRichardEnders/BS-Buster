@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 def load_api_key() -> str:
     """Load API key from .env file"""
     load_dotenv()
-    api_key = os.getenv("KIMI_API_KEY")
+    api_key = os.getenv("PERPLEXITY_API_KEY")
     if not api_key:
         raise ValueError(
             "API key not found. Please ensure OPENAI_API_KEY is set in your .env file."
