@@ -1,5 +1,6 @@
 import re
 import sys
+from openai import OpenAI, OpenAIError
 import sounddevice as sd
 import numpy as np
 from scipy.io import wavfile
@@ -9,8 +10,10 @@ import time
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel
 import tempfile
-from openai import OpenAI, OpenAIError
+from langfuse.openai import openai
 from fastapi.middleware.cors import CORSMiddleware
+from langfuse.decorators import observe
+
 
 import support_service
 
@@ -39,6 +42,23 @@ audio_queue = queue.Queue()
 is_recording = False
 recording_thread = None
 last_process_time = time.time()
+
+@observe()
+def lang_test():
+    return openai.chat.completions.create(
+        model="gpt-3.5-turbo",
+        max_tokens=100,
+        messages=[
+          {"role": "system", "content": "You are a great storyteller."},
+          {"role": "user", "content": "Once upon a time in a galaxy far, far away..."}
+        ],
+    ).choices[0].message.content
+
+
+@app.get("/langfuse")
+@observe()
+def test():
+    return {"test": lang_test()}
 
 
 def audio_callback(indata, frames, time, status):
@@ -85,6 +105,7 @@ async def stop_recording():
 sentences_set = {}
 
 
+@observe()
 @app.post("/transcript")
 async def get_transcript():
     global is_recording, audio_queue, last_process_time, previous_half_sentence
@@ -125,7 +146,7 @@ async def get_transcript():
 
         claims = []
         with open(temp_audio_path, "rb") as audio_file:
-            transcription = client.audio.transcriptions.create(
+            transcription = openai.audio.transcriptions.create(
                 model="whisper-1", file=audio_file, language="en"
             )
             sentences = re.split(r"(?<=[.!?])\s+", transcription.text)
