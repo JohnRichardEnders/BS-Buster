@@ -50,6 +50,7 @@ def audio_callback(indata, frames, time, status):
 def record_audio():
     global is_recording
     with sd.InputStream(
+        device=1,
         samplerate=SAMPLE_RATE,
         channels=CHANNELS,
         dtype=DTYPE,
